@@ -1,10 +1,11 @@
 const amqp = require('amqplib');
-const { rabbitmq_connection_string } = require('../config.js');
+const { rabbitmq_connection_string } = require('../config');
 
 let connection = null;
 let channel = null;
-const q = 'task_queue';
+const exchange = 'logs';
 const msg = process.argv.slice(2).join(' ') || 'Hello World';
+
 const open = amqp.connect(rabbitmq_connection_string);
 
 open
@@ -14,8 +15,8 @@ open
   })
   .then(ch => {
     channel = ch;
-    channel.assertQueue(q, { durable: true });
-    channel.sendToQueue(q, Buffer.from(msg), { persistent: true });
+    channel.assertExchange(exchange, 'fanout', { durable: false });
+    ch.publish(exchange, '', Buffer.from(msg));
     console.log(`[x] sent ${msg}`);
   })
   .then(() => {
